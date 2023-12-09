@@ -95,6 +95,73 @@ module Part_1 = struct
     Ok (sum |> Int64.of_int |> Int64.to_string)
 end
 
+let calc input pos x y =
+  let length = String.length input in
+  let line_length = String.index input '\n' + 1 in
+  let pos' = pos + x + (y * line_length) in
+  if pos' < 0 || pos' >= length then
+    None
+  else
+    Some pos'
+    
+let rec find_start_position input pos = 
+  let pos' = pos - 1 in
+  if pos' < 0 then
+    Lexer.make input
+  else
+    let ch = String.get input pos' in
+    if Lexer.is_digit ch then
+      find_start_position input pos'
+    else
+      {
+        (Lexer.make input) with
+        position = pos;
+        read_position = pos + 1;
+        ch = String.get input pos
+      }
+
 module Part_2 = struct
-  let run (input : string) : (string, string) result = Ok input
+  let rec go acc lex = 
+    let (start, lex', token) = lex |> Lexer.next_token in
+    match token with
+    | Token.EOF -> acc
+    | Token.Symbol ch when ch = '*' -> go (start :: acc) lex'
+    | _ -> go acc lex'
+
+  let xs = [
+    (-1, -1); (0, -1); (1, -1);
+    (-1, 0); (1, 0);
+    (-1, 1); (0, 1); (1, 1)
+  ]
+
+  let run (input : string) : (string, string) result =
+    let gears = (go [] (Lexer.make input)) in
+    let result = gears
+      |> List.map (fun pos ->
+        xs
+        |> List.map (fun (x, y) -> calc input pos x y)
+        |> List.filter_map (fun pos -> Option.bind pos (fun pos -> if String.get input pos = '.' then None else Some pos))
+        |> List.map (fun x -> find_start_position input x)
+        |> List.map (fun lex -> Lexer.next_token lex)
+        |> List.filter_map (fun (start, lex, token) -> match token with
+            | Token.Int number -> Some (start, lex, number)
+            | _ -> None
+          )
+        |> List.sort_uniq (fun (s1, l1, _) (s2, l2, _) ->
+            if (s1 < s2) then -1
+            else if (s1 > s2) then 1
+            else if (l1 < l2) then -1
+            else if (l1 > l2) then 1
+            else 0
+          ) 
+      )
+      |> List.filter_map (function
+            | (_, _, x1) :: (_, _, x2) :: [] -> Some (x1 * x2)
+            | _ -> None
+        )
+      |> List.fold_left ( + ) 0
+      |> Int64.of_int
+      |> Int64.to_string
+    in 
+    Ok result
 end
