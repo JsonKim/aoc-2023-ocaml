@@ -1,11 +1,11 @@
 let year = 2023
 let day = 5
 
-let string_to_int64 s = s |> Int64.of_string
+let string_to_int s = s |> Int64.of_string |> Int64.to_int
 
 let is_in source destination range position =
-  if ((Int64.compare source position) <= 0) && (Int64.compare position (Int64.add source range)) < 0 then
-    Some (Int64.add (Int64.sub position source) destination)
+  if (source <= position) && (position < source + range) then
+    Some ((position - source) + destination)
   else
     None
 
@@ -25,7 +25,7 @@ module Part_1 = struct
     |> String.split_on_char ' '
     |> List.tl
     |> (List.filter (fun x -> (x |> String.trim |> String.length) > 0))
-    |> List.map string_to_int64
+    |> List.map string_to_int
   
   let parse_map input =
     input
@@ -34,7 +34,7 @@ module Part_1 = struct
     |> List.filter (fun x -> (x |> String.length) > 0)
     |> List.map (String.split_on_char ' ')
     |> List.map (function
-        | x :: y :: z :: [] -> (x |> string_to_int64, y |> string_to_int64, z |> string_to_int64)
+        | x :: y :: z :: [] -> (x |> string_to_int, y |> string_to_int, z |> string_to_int)
         | x :: [] -> raise (Invalid_argument (Printf.sprintf "line of map must have three items, but %s." x))
         | l -> raise (Invalid_argument (Printf.sprintf "line of map must have 3 items, but %d." (l |> List.length)))
     )
@@ -44,9 +44,9 @@ module Part_1 = struct
     let seeds = spliteed |> List.hd |> parse_seeds in
     let maps = spliteed |> List.tl |> List.map parse_map in
     let seeds' = seeds |> List.map (fun seed -> List.fold_left (fun acc map -> next_position map acc) seed maps) in
-    let result = seeds' |> List.fold_left Int64.min Int64.max_int in 
+    let result = seeds' |> List.fold_left Int.min Int.max_int in 
 
-    Ok (result |> Int64.to_string)
+    Ok (result |> Int64.of_int |> Int64.to_string)
 end
 
 module Part_2 = struct
