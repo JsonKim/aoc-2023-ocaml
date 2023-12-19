@@ -59,5 +59,29 @@ module Part_1 = struct
 end
 
 module Part_2 = struct
-  let run (input : string) : (string, string) result = Ok input
+  let process remain_damaged gears =
+    let add acc token = acc |> List.map (fun x -> x @ [token]) in
+    let rec aux remain_damaged acc = function
+    | None :: tl when (remain_damaged > 0) -> (
+      let s = aux (remain_damaged - 1) (add acc Sharp) tl in
+      let d = aux remain_damaged (add acc Dot) tl in
+      s @ d
+    )
+    | None :: tl -> (
+      let d = aux remain_damaged (add acc Dot) tl in
+      d
+    )
+    | Some token :: tl -> aux remain_damaged (add acc token) tl
+    | [] -> acc
+    in aux remain_damaged [[]] gears
+
+  let run (_input : string) : (string, string) result =
+    let gears =
+      "??"
+      |> parse_line
+      |> process 1
+    in
+    Printf.printf "\n";
+    gears |> List.iter (fun gears -> Printf.printf "%s\n" (gears |> gears_to_string));
+    Ok ""
 end
